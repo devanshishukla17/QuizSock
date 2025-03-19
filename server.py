@@ -27,13 +27,13 @@ server.listen(100)
 
 list_of_clients = []
 
-Q = [" What is the Italian word for PIE? \n a.Mozarella b.Pasty c.Patty d.Pizza",
-     " Water boils at 212 Units at which scale? \n a.Fahrenheit b.Celsius c.Rankine d.Kelvin",
-     " Which sea creature has three hearts? \n a.Dolphin b.Octopus c.Walrus d.Seal",
-     " Who was the character famous in our childhood rhymes associated with a lamb? \n a.Mary b.Jack c.Johnny d.Mukesh",
-     " How many bones does an adult human have? \n a.206 b.208 c.201 d.196",
-     " How many wonders are there in the world? \n a.7 b.8 c.10 d.4",
-     " What element does not exist? \n a.Xf b.Re c.Si d.Pa",
+Q = [" 1.What is the Italian word for PIE? \n a.Mozarella b.Pasty c.Patty d.Pizza",
+     " 2.Water boils at 212 Units at which scale? \n a.Fahrenheit b.Celsius c.Rankine d.Kelvin",
+     " 3.Which sea creature has three hearts? \n a.Dolphin b.Octopus c.Walrus d.Seal",
+     " 4.Who was the character famous in our childhood rhymes associated with a lamb? \n a.Mary b.Jack c.Johnny d.Mukesh",
+     " 5.How many bones does an adult human have? \n a.206 b.208 c.201 d.196",
+     " 6.How many wonders are there in the world? \n a.7 b.8 c.10 d.4",
+     " 7.What element does not exist? \n a.Xf b.Re c.Si d.Pa",
     ]
 
 A = ['d', 'a', 'b', 'a', 'a', 'a', 'a',]
