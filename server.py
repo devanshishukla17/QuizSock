@@ -41,63 +41,82 @@ A = ['d', 'a', 'b', 'a', 'a', 'a', 'a',]
 Count = []
 client = ["address", -1]
 bzr = [0, 0, 0]  # Buzzer List
-
+player_count = 0 
+players = {}  
+clients = [] 
+correct_answers = 0  
 
 def clientthread(conn, addr):
-    conn.send(b"Hello Genius!!!\n Welcome to this quiz! Answer any 5 questions correctly before your opponents do\n Press any key on the keyboard as a buzzer for the given question\n")
-    # Intro MSG
-    while True:
-        message = conn.recv(2048)
-        if message:
-            if bzr[0] == 0:
-                client[0] = conn
-                bzr[0] = 1
-                i = 0
-                while i < len(list_of_clients):
-                    if list_of_clients[i] == client[0]:
-                        break
-                    i += 1
-                client[1] = i
+    global player_count, players, correct_answers
 
-            elif bzr[0] == 1 and conn == client[0]:
-                bol = message[0] == A[bzr[2]][0]
-                print(A[bzr[2]][0])
-                if bol:
-                    broadcast(f"player {client[1] + 1} +1\n\n")
-                    Count[i] += 1
-                    if Count[i] == 5:
-                        broadcast(f"player {client[1] + 1} WON\n")
-                        end_quiz()
-                        sys.exit()
+    # Increment the player count and assign a new player number
+    player_count += 1
+    player_id = player_count
+    players[conn] = player_id
+    clients.append(conn)  # Add this connection to the clients list
 
-                else:
-                    broadcast(f"player {client[1] + 1} -1\n\n")
-                    Count[i] -= 1
-                bzr[0] = 0
-                if len(Q) != 0:
-                    Q.pop(bzr[2])
-                    A.pop(bzr[2])
-                if len(Q) == 0:
-                    end_quiz()
-                quiz()
+    # Send a welcome message to the player
+    conn.send(f"Welcome Player {player_id}!\n".encode())
+    conn.send("Hello Genius!!!\n".encode())
+    conn.send("Welcome to this quiz! Answer any 5 questions correctly before your opponents do.\n".encode())
+    conn.send("Press any key on the keyboard as a buzzer for the given question.\n".encode())
 
-            else:
-                conn.send(f" player {client[1] + 1} pressed buzzer first\n\n".encode())
-        else:
-            remove(conn)
+    # Original quiz logic: Iterate over questions
+    question_index = 0  # Track which question to ask
+    total_questions = len(Q)  # Number of questions available
 
-
-
-
-
-def broadcast(message):
-    for clients in list_of_clients:
+    while question_index < total_questions:
         try:
-            clients.send(message.encode())
-        except:
-            clients.close()
-            remove(clients)
+            # Send the next question to all players (broadcast)
+            question = Q[question_index]
+            broadcast(f"Question {question_index + 1}: {question}\n")
 
+            # Receive buzzer response from players
+            buzzer = conn.recv(1024).decode()
+
+            if buzzer:
+                broadcast(f"Player {player_id} pressed the buzzer first!\n")
+
+                # Ask for the player's answer
+                conn.send("What's your answer?\n".encode())
+                player_answer = conn.recv(1024).decode().strip()
+
+                # Check the player's answer against the correct answer
+                if player_answer.strip().lower() == A[question_index].strip().lower():
+                    correct_answers += 1
+                    conn.send("Correct answer!\n".encode())
+                else:
+                    conn.send("Wrong answer!\n".encode())
+
+                # Move to the next question
+                question_index += 1
+
+                # Check if the player has won
+                if correct_answers == 5:
+                    broadcast(f"Player {player_id} has won the quiz!\n")
+                    break
+            else:
+                remove(conn)  # Remove player if no buzzer input
+        except:
+            continue
+
+    # End the quiz when all questions are answered
+    if question_index == total_questions:
+        broadcast("The quiz has ended!\n")
+
+
+# Broadcast function to send messages to all connected players
+def broadcast(message):
+    for client in clients:
+        try:
+            client.send(message.encode())
+        except:
+            remove(client)
+
+# Remove player from the game when they disconnect
+def remove(conn):
+    if conn in clients:
+        clients.remove(conn)
 
 def end_quiz():
     broadcast("Game Over\n")
@@ -118,19 +137,11 @@ def end_quiz():
     # Close the server after the game ends
     server.close()
 
-
-
 def quiz():
     bzr[2] = random.randint(0, 10000) % len(Q)
     if len(Q) != 0:
         for connection in list_of_clients:
             connection.send(Q[bzr[2]].encode())
-
-
-def remove(connection):
-    if connection in list_of_clients:
-        list_of_clients.remove(connection)
-
 
 while True:
     conn, addr = server.accept()
