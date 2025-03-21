@@ -82,6 +82,8 @@ def clientthread(conn, addr):
                 player_answer = conn.recv(1024).decode().strip()
 
                 # Check the player's answer against the correct answer
+                # Modify the answer comparison section to include strict cleaning
+                print(f"Player's answer: '{player_answer.strip().lower()}', Correct answer: '{A[question_index].strip().lower()}'")  # Debugging
                 if player_answer.strip().lower() == A[question_index].strip().lower():
                     correct_answers += 1
                     conn.send("Correct answer!\n".encode())
