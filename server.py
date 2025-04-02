@@ -104,9 +104,8 @@ def clientthread(conn, addr):
 
     # End the quiz when all questions are answered
     if question_index == total_questions:
-        broadcast("The quiz has ended!\n")
-
-
+        broadcast("The quiz has ended!\n")        
+        
 # Broadcast function to send messages to all connected players
 def broadcast(message):
     for client in clients:
