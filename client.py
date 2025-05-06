@@ -3,6 +3,7 @@ import select
 import sys
 import threading
 import time
+import ssl
 
 # Flag to control thread execution
 running = True
@@ -29,6 +30,7 @@ def receive_messages(server_socket):
     try:
         while running:
             try:
+                print("Waiting to receive a message...")
                 message = server_socket.recv(2048).decode()  # Receive messages from the server
                 if not message:
                     print("Server disconnected.")
@@ -47,22 +49,31 @@ def receive_messages(server_socket):
 # Main function to handle connection and manage threads
 def main():
     global running
-    
-    # Initialize the socket connection
+
+    if len(sys.argv) != 3:
+        print("Usage: python client.py <IP Address> <Port>")
+        exit()
+
+    IP_address = str(sys.argv[1])
+    Port = int(sys.argv[2])
+
     try:
-        server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        
-        if len(sys.argv) != 3:
-            print("Usage: python client.py <IP Address> <Port>")
-            exit()
+        # Create a raw socket
+        raw_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-        IP_address = str(sys.argv[1])
-        Port = int(sys.argv[2])
+        # Create an SSL context
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        context.check_hostname = False
+        context.verify_mode = ssl.CERT_NONE  # For testing only
 
-        # Connect to server with timeout
+        # Wrap the socket with SSL
+        server = context.wrap_socket(raw_socket, server_hostname=IP_address)
+
+        # Connect to server
         server.settimeout(5)
         try:
             server.connect((IP_address, Port))
+            print("Client connected, waiting for server message...")
             server.settimeout(None)  # Reset timeout after connection
         except socket.timeout:
             print("Connection timed out. Server may be unavailable.")
@@ -73,6 +84,8 @@ def main():
         except Exception as e:
             print(f"Error connecting to server: {e}")
             return
+
+        print(f"Connected securely to {IP_address}:{Port}")
 
         # Start threads
         send_thread = threading.Thread(target=send_messages, args=(server,))
@@ -86,7 +99,7 @@ def main():
         # Main thread waits and monitors threads
         while running and (send_thread.is_alive() or receive_thread.is_alive()):
             time.sleep(0.1)
-    
+
     except KeyboardInterrupt:
         print("\nExiting...")
     except Exception as e:
@@ -97,7 +110,7 @@ def main():
             server.close()
         except:
             pass
-        
+
         print("Disconnected from server.")
 
 if __name__ == "__main__":

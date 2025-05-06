@@ -4,6 +4,7 @@ import threading
 import sys
 import time
 import random
+import ssl 
 
 # Global Constants
 BUFFER_SIZE = 2048
@@ -12,16 +13,16 @@ MAX_SCORE_TO_WIN = 5
 QUESTION_DELAY = 2
 
 # Game data
-Q = [" 1.What is the Italian word for PIE? \n a.Mozarella b.Pasty c.Patty d.Pizza",
-     " 2.Water boils at 212 Units at which scale? \n a.Fahrenheit b.Celsius c.Rankine d.Kelvin",
+Q = [" 1.Who is the youngest person to win Nobel Peace Prize? \n a.Greta Thunberg b.Kailash Satyarthi c.Emma Watson d.Malala Yousafzai",
+     " 2.Which planet has the most moons in our solar system? \n a.Saturn b.Neptune c.Jupiter d.Uranus",
      " 3.Which sea creature has three hearts? \n a.Dolphin b.Octopus c.Walrus d.Seal",
-     " 4.Who was the character famous in our childhood rhymes associated with a lamb? \n a.Mary b.Jack c.Johnny d.Mukesh",
-     " 5.How many bones does an adult human have? \n a.206 b.208 c.201 d.196",
-     " 6.How many wonders are there in the world? \n a.7 b.8 c.10 d.4",
-     " 7.What element does not exist? \n a.Xf b.Re c.Si d.Pa",
+     " 4.Which data structure follows Last-In-First-Out(LIFO) principle? \n a.Queue b.Linked list c.Stack d.Array",
+     " 5.How many members does K-pop boy band BTS have? \n a.9  b.6  c.8  d.7",
+     " 6.Which protocol is primarily used for secure communication over the internet? \n a.FTP b.HTTPS c.TCP d.HTTP",
+     " 7.Which rapper is known for his alter ego “Slim Shady”? \n a.Eminem b.Logic c.Machine Gun Kelly d.Post Malone",
     ]
 
-A = ['d', 'a', 'b', 'a', 'a', 'a', 'a']
+A = ['d', 'a', 'b', 'c', 'd', 'b', 'a']
 
 # Global variables
 clients = []  # List of client connections
@@ -240,19 +241,24 @@ IP_address = str(sys.argv[1])
 Port = int(sys.argv[2])
 
 # Setup socket
-server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+# Wrap with SSL
+context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
+context.load_cert_chain(certfile="server.crt", keyfile="server.key")
+ssl_server_socket = context.wrap_socket(server_socket, server_side=True)
 
 try:
-    server.bind((IP_address, Port))
-    server.listen(100)
-    print(f"Server started on {IP_address}:{Port}")
+    ssl_server_socket.bind((IP_address, Port))
+    ssl_server_socket.listen(100)
+    print(f"SSL-secured server started on {IP_address}:{Port}")
     print(f"Waiting for {MIN_PLAYERS} players to connect...")
 
     # Main server loop
     while True:
         try:
-            conn, addr = server.accept()
+            conn, addr = ssl_server_socket.accept()
             print(f"{addr[0]} connected")
             threading.Thread(target=clientthread, args=(conn, addr), daemon=True).start()
         except KeyboardInterrupt:
@@ -270,5 +276,5 @@ finally:
             client.close()
         except:
             pass
-    server.close()
+    server_socket.close()
     print("Server shut down.")
